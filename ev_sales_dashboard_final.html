@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EV Sales Dashboard Final</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  background: #eef2f7;
+}
+header {
+  background: #1f2937;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 24px;
+}
+.controls {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  justify-content: center;
+}
+select, input {
+  padding: 8px;
+  border-radius: 6px;
+}
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+.chart {
+  background: white;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  height: 420px;
+}
+.full-width {
+  grid-column: span 2;
+}
+#kpi {
+  font-size: 26px;
+  text-align: center;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+
+<body>
+
+<header>🚗 EV Sales Dashboard (Final Version)</header>
+
+<div class="controls">
+<input type="file" id="fileInput" accept=".json">
+<select id="manufacturerFilter"><option value="All">All Manufacturers</option></select>
+<select id="batteryFilter"><option value="All">All Battery Types</option></select>
+</div>
+
+<div id="kpi">Upload JSON file to view dashboard</div>
+
+<div class="container">
+<div id="salesByManufacturer" class="chart"></div>
+<div id="priceVsSales" class="chart"></div>
+<div id="rangeVsBattery" class="chart"></div>
+<div id="salesByCountry" class="chart"></div>
+</div>
+
+<script>
+
+let originalData = [];
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    originalData = JSON.parse(evt.target.result);
+    populateFilters(originalData);
+    updateDashboard();
+  }
+  reader.readAsText(file);
+});
+
+document.getElementById('manufacturerFilter').addEventListener('change', updateDashboard);
+document.getElementById('batteryFilter').addEventListener('change', updateDashboard);
+
+function populateFilters(data){
+  let manufacturers = [...new Set(data.map(d => d.Manufacturer))];
+  let batteries = [...new Set(data.map(d => d.Battery_Type))];
+
+  let mSelect = document.getElementById('manufacturerFilter');
+  let bSelect = document.getElementById('batteryFilter');
+
+  manufacturers.forEach(m => {
+    let opt = document.createElement('option');
+    opt.value = m;
+    opt.text = m;
+    mSelect.appendChild(opt);
+  });
+
+  batteries.forEach(b => {
+    let opt = document.createElement('option');
+    opt.value = b;
+    opt.text = b;
+    bSelect.appendChild(opt);
+  });
+}
+
+function getFilteredData(){
+  let mVal = document.getElementById('manufacturerFilter').value;
+  let bVal = document.getElementById('batteryFilter').value;
+
+  return originalData.filter(d => 
+    (mVal === "All" || d.Manufacturer === mVal) &&
+    (bVal === "All" || d.Battery_Type === bVal)
+  );
+}
+
+function updateDashboard(){
+
+  let data = getFilteredData();
+
+  const totalSales = data.reduce((sum, d) => sum + d.Units_Sold_2024, 0);
+  document.getElementById("kpi").innerHTML = "Total Units Sold: " + totalSales.toLocaleString();
+
+  // Manufacturer
+  let mMap = {};
+  data.forEach(d => mMap[d.Manufacturer] = (mMap[d.Manufacturer]||0)+d.Units_Sold_2024);
+
+  Plotly.newPlot('salesByManufacturer', [{
+    x: Object.keys(mMap),
+    y: Object.values(mMap),
+    type: 'bar'
+  }], {
+    title: "Sales by Manufacturer",
+    height: 400,
+    margin: { t:50, l:50, r:30, b:80 }
+  }, { responsive:true });
+
+  // Price Range
+  let priceBuckets = {"0-50K":0,"50K-100K":0,"100K-150K":0,"150K+":0};
+
+  data.forEach(d=>{
+    let p=d.Price_USD;
+    if(p<=50000) priceBuckets["0-50K"]+=d.Units_Sold_2024;
+    else if(p<=100000) priceBuckets["50K-100K"]+=d.Units_Sold_2024;
+    else if(p<=150000) priceBuckets["100K-150K"]+=d.Units_Sold_2024;
+    else priceBuckets["150K+"]+=d.Units_Sold_2024;
+  });
+
+  Plotly.newPlot('priceVsSales', [{
+    x:Object.keys(priceBuckets),
+    y:Object.values(priceBuckets),
+    type:'bar'
+  }], {
+    title:"Sales by Price Range",
+    height:400,
+    margin:{ t:50, l:50, r:30, b:80 }
+  }, { responsive:true });
+
+  // Battery Avg Range
+  let bMap={};
+  data.forEach(d=>{
+    if(!bMap[d.Battery_Type]) bMap[d.Battery_Type]={total:0,count:0};
+    bMap[d.Battery_Type].total+=d.Range_km;
+    bMap[d.Battery_Type].count++;
+  });
+
+  let bTypes=[], avgRange=[];
+  for(let k in bMap){
+    bTypes.push(k);
+    avgRange.push(bMap[k].total/bMap[k].count);
+  }
+
+  Plotly.newPlot('rangeVsBattery', [{
+    x:bTypes,
+    y:avgRange,
+    type:'bar'
+  }], {
+    title:"Average Range by Battery",
+    height:400,
+    margin:{ t:50, l:50, r:30, b:120 },
+    xaxis:{ tickangle:-30 }
+  }, { responsive:true });
+
+  // Top 10 Countries (Bonus Fix)
+  let cMap={};
+  data.forEach(d=>cMap[d.Country_of_Manufacture]=(cMap[d.Country_of_Manufacture]||0)+d.Units_Sold_2024);
+
+  let sorted = Object.entries(cMap)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,10);
+
+  Plotly.newPlot('salesByCountry', [{
+    x: sorted.map(d=>d[0]),
+    y: sorted.map(d=>d[1]),
+    type:'bar'
+  }], {
+    title:"Top 10 Countries by Sales",
+    height:400,
+    margin:{ t:50, l:60, r:30, b:80 }
+  }, { responsive:true });
+}
+
+</script>
+
+</body>
+</html>
