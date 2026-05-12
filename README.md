@@ -50,4 +50,4 @@ The primary goal is to showcase how data professionals can use generative AI to 
 *   **Scalability:** The framework can be easily adapted for different industry verticals.
 
 ---
-
+file:///C:/Users/avina/OneDrive/Pictures/Screenshots/Screenshot%202026-04-29%20204146.png
