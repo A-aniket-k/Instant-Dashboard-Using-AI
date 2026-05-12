@@ -31,7 +31,7 @@ The primary goal is to showcase how data professionals can use generative AI to 
 *   **Objective:** To monitor engagement metrics and audience growth trends.
 *   **Technology:** Plotly Dark Engine.
 *   **Key Metrics:** Engagement rate, follower acquisition, and content-type performance analysis.
-*   **Live Link:** [Access Live Automation Dashboard]([https://script.google.com/macros/s/AKfycbxHaPCw333r_6UCdei3RRpOoxyHhl7Q-7mdUVqML1GXmtn1kAWxo4AX9pIfDH8eWrs/exec](https://a-aniket-k.github.io/Instant-Dashboard-Using-AI/AI%20Dashboard%20Project/Insta_Performance_DB/instagram_performance_dashboard_plotly_dark.html))
+*   **Live Link:** [Access Live Automation Dashboard](https://a-aniket-k.github.io/Instant-Dashboard-Using-AI/AI%20Dashboard%20Project/Insta_Performance_DB/instagram_performance_dashboard_plotly_dark.html)
 
 ### 2. EV Market Penetration Dashboard
 *   **Objective:** A comprehensive analysis of Electric Vehicle (EV) sales and market distribution.
